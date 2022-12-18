@@ -23,4 +23,36 @@ const fetchMyIP = function(callback) {
   });
 };
 
-module.exports = { fetchMyIP };
+const fetchCoordsByIP = function(ip, callback) {
+  request("http://ipwho.is/" + ip, (error, response, body) => {
+    if (error) {
+      return callback(error, null);
+    }
+    const parsedBody = JSON.parse(body);
+    if (!parsedBody) {
+      const msg = `Success status was ${parsedBody.success}. Server message says: ${parsedBody.message} when fetching for IP ${parsedBody.ip}`;
+      return callback(Error(msg), null);
+    }
+    const {latitude, longitude} = parsedBody;
+    callback(null, {latitude, longitude});
+  });
+};
+
+const fetchISSFlyOverTimes = function(coords, callback) {
+  request(`https://iss-flyover.herokuapp.com/json/?lat=${coords.latitude}&lon=${coords.longitude}`, (error, response, body) => {
+    if (error) {
+      return callback(error, null);
+    }
+    if (response.statusCode !== 200) {
+      const msg = (`Status Code ${response.statusCode} when fetching ISS pass times: ${body}`);
+      return callback(Error(msg), null);
+    }
+    const passes = JSON.parse(body).response;
+    callback(null, passes);
+  });
+};
+
+
+// module.exports = {fetchMyIP};
+// module.exports = { fetchCoordsByIP };
+module.exports = {fetchISSFlyOverTimes};
